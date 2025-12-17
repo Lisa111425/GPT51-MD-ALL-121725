@@ -1,0 +1,21 @@
+streamlit
+plotly
+pyyaml
+
+# PDF handling (user-selectable backends)
+pypdf
+PyPDF2
+PyMuPDF
+
+# OCR (Tesseract + image handling)
+pytesseract
+Pillow
+
+# PDF viewing (pdf.js-based; better cross-browser including Edge)
+streamlit-pdf-viewer
+
+# LLM providers
+google-generativeai
+openai
+anthropic
+xai_sdk
