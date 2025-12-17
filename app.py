@@ -139,6 +139,40 @@ Your job is to read page images of PDF documents and output ONLY the recognized 
 - Do not add extra commentary, headings, or formatting, only the raw text.
 """
 
+OCR_FORMAT_SYSTEM_PROMPT_ZH = """
+你是一位專業文件排版與結構化助理。
+任務：根據「原始 OCR 或貼上的文字」輸出一份乾淨、結構清楚的 Markdown 文件。
+
+請遵守以下原則：
+1. 不要翻譯文字，保留原本語言。
+2. 自動偵測標題、段落、條列、編號與表格，並轉換成合適的 Markdown 語法。
+3. 盡量移除明顯的頁首頁尾、頁碼、重複抬頭等版面雜訊。
+4. 避免任意刪除內容；若遇到明顯錯別字，可在不改變原意的前提下微調。
+5. 不要在開頭或結尾加上額外說明，只輸出整理後的 Markdown 文件本身。
+"""
+
+AI_MAGIC_RISK_SYSTEM_PROMPT_ZH = """
+你是一位風險管理與矯正 / 預防行動顧問。
+請根據提供的「文件分析結果」，用繁體中文輸出：
+
+1. 以 Markdown 撰寫一個簡短的整體摘要。
+2. 建立一個風險與行動對照表，欄位：
+   | 風險編號 | 風險描述 | 可能影響 | 建議矯正 / 預防行動 | 優先順序 (高/中/低) |
+3. 儘量使用文件中的關鍵用語，不要憑空創造不存在的事實。
+4. 若資訊不足，請明確標註「資訊不足，需人工補充」。
+"""
+
+AI_MAGIC_CARDS_SYSTEM_PROMPT_ZH = """
+你是一位知識整理與教學設計顧問。
+請根據提供的「文件分析結果」，用繁體中文產生「知識卡片」(Q&A flashcards)：
+
+1. 以 Markdown 表格輸出：
+   | 卡片編號 | 問題 (Question) | 答案 (Answer) | 關鍵字 |
+2. 目標產出 10–20 張卡片，每張聚焦一個明確概念或重點。
+3. 答案要簡潔、可被實務人員快速理解。
+4. 關鍵字請用半形逗號分隔。
+"""
+
 
 # ------------------- DATA MODELS ------------------
 
@@ -951,6 +985,7 @@ UI_LABELS = {
         "pipeline_tab": "Pipeline",
         "smart_tab": "Smart Replace",
         "pdf_tab": "PDF Merge & Analysis",
+        "ocr_lab_tab": "OCR Studio & Prompt Compare",
         "dashboard_tab": "Dashboard & Logs",
         "template": "Audit Template (Markdown)",
         "observations": "Raw Observations",
@@ -1002,7 +1037,7 @@ UI_LABELS = {
         "pdf_qa_run": "Run Q&A",
         "pdf_qa_view_mode": "Q&A view",
         "pdf_need_merged": "Please merge PDFs first before running summary or Q&A.",
-        # OCR
+        # OCR (PDF tab)
         "ocr_section": "Optional OCR on merged PDF (for scanned image pages)",
         "ocr_enable": "Enable OCR before summary & Q&A",
         "ocr_backend": "OCR backend",
@@ -1024,12 +1059,60 @@ UI_LABELS = {
         "ocr_use_native": "Use original extracted text",
         "ocr_use_ocr": "Use OCR text",
         "ocr_no_text_yet": "No OCR text yet. Run OCR first.",
+        # OCR Lab tab
+        "ocr_lab_title": "OCR Studio – PDF/Text → Markdown + Prompt A/B",
+        "ocr_lab_source_mode": "Source type",
+        "ocr_lab_source_pdf": "Upload PDF",
+        "ocr_lab_source_text": "Paste text / Markdown",
+        "ocr_lab_upload_pdf": "Upload a single PDF for OCR",
+        "ocr_lab_pdf_preview": "PDF preview",
+        "ocr_lab_pages": "Pages to OCR",
+        "ocr_lab_paste_text": "Paste raw text or Markdown to start from",
+        "ocr_lab_format_section": "Step 2 – Auto format OCR/text into clean Markdown",
+        "ocr_lab_format_model": "Model for auto-formatting",
+        "ocr_lab_format_max_tokens": "Max tokens for auto-formatting",
+        "ocr_lab_format_temperature": "Temperature for auto-formatting",
+        "ocr_lab_format_run": "Format to Markdown",
+        "ocr_lab_markdown_editor_title": "Step 3 – Edit OCR Markdown",
+        "ocr_lab_markdown_view_mode": "Markdown view",
+        "ocr_lab_markdown_view_edit": "Markdown editor",
+        "ocr_lab_markdown_view_preview": "Preview",
+        "ocr_lab_no_source": "Please upload a PDF or paste some text first.",
+        "ocr_lab_no_markdown": "Please generate or edit Markdown first.",
+        "ocr_lab_compare_section": "Step 4 – Prompt & Model A/B comparison",
+        "ocr_lab_prompt_a": "Prompt A (instructions)",
+        "ocr_lab_prompt_b": "Prompt B (instructions)",
+        "ocr_lab_model_a": "Model A",
+        "ocr_lab_model_b": "Model B",
+        "ocr_lab_max_tokens_a": "Max tokens A",
+        "ocr_lab_max_tokens_b": "Max tokens B",
+        "ocr_lab_temperature_a": "Temperature A",
+        "ocr_lab_temperature_b": "Temperature B",
+        "ocr_lab_run_a": "Run A",
+        "ocr_lab_run_b": "Run B",
+        "ocr_lab_run_both": "Run A & B",
+        "ocr_lab_result_a_title": "Result A",
+        "ocr_lab_result_b_title": "Result B",
+        "ocr_lab_result_view_mode": "Result view",
+        "ocr_lab_ai_magic_section": "Step 5 – AI Magic on results",
+        "ocr_lab_ai_magic_type": "AI Magic type",
+        "ocr_lab_ai_magic_1": "Magic 1 – Risk & Action Map",
+        "ocr_lab_ai_magic_2": "Magic 2 – Knowledge Cards (Q&A)",
+        "ocr_lab_ai_magic_model": "AI Magic model",
+        "ocr_lab_ai_magic_max_tokens": "AI Magic max tokens",
+        "ocr_lab_ai_magic_temperature": "AI Magic temperature",
+        "ocr_lab_ai_magic_run": "Run AI Magic",
+        "ocr_lab_ai_magic_result_title": "AI Magic result",
+        "ocr_lab_dashboard_section": "Mini dashboard – A/B comparison metrics",
+        "ocr_lab_dashboard_description": "Compare latency and token usage between Result A and Result B.",
+        "ocr_lab_no_runs_yet": "No A/B runs yet. Run at least one side.",
     },
     "zh": {
         "title": "AuditFlow AI – 醫療器材品質稽核智能流程",
         "pipeline_tab": "稽核流程管線",
         "smart_tab": "智慧套版 (Smart Replace)",
         "pdf_tab": "PDF 合併與分析",
+        "ocr_lab_tab": "OCR 文件工作室與比較",
         "dashboard_tab": "儀表板與日誌",
         "template": "稽核報告模板 (Markdown)",
         "observations": "原始觀察紀錄",
@@ -1081,7 +1164,7 @@ UI_LABELS = {
         "pdf_qa_run": "執行問答",
         "pdf_qa_view_mode": "問答檢視模式",
         "pdf_need_merged": "請先完成 PDF 合併再進行摘要或問答。",
-        # OCR
+        # OCR (PDF tab)
         "ocr_section": "（選用）對合併後 PDF 執行 OCR（適用掃描影像頁面）",
         "ocr_enable": "在產生摘要 / 問答前先對合併後 PDF 做 OCR",
         "ocr_backend": "OCR 後端",
@@ -1103,6 +1186,53 @@ UI_LABELS = {
         "ocr_use_native": "改用原始文字擷取結果",
         "ocr_use_ocr": "改用 OCR 結果",
         "ocr_no_text_yet": "尚未產生 OCR 文字，請先執行 OCR。",
+        # OCR Lab tab
+        "ocr_lab_title": "OCR 文件工作室 – PDF / 文字 → Markdown + 雙模型比較",
+        "ocr_lab_source_mode": "資料來源類型",
+        "ocr_lab_source_pdf": "上傳 PDF",
+        "ocr_lab_source_text": "貼上文字 / Markdown",
+        "ocr_lab_upload_pdf": "上傳單一 PDF 進行 OCR",
+        "ocr_lab_pdf_preview": "PDF 預覽",
+        "ocr_lab_pages": "選擇要 OCR 的頁碼",
+        "ocr_lab_paste_text": "貼上欲處理的原始文字或 Markdown",
+        "ocr_lab_format_section": "步驟二：自動將 OCR / 文字整理為乾淨 Markdown",
+        "ocr_lab_format_model": "Markdown 自動排版使用模型",
+        "ocr_lab_format_max_tokens": "Markdown 排版最大輸出 tokens",
+        "ocr_lab_format_temperature": "Markdown 排版溫度 (temperature)",
+        "ocr_lab_format_run": "自動整理為 Markdown",
+        "ocr_lab_markdown_editor_title": "步驟三：編輯 OCR 產生的 Markdown",
+        "ocr_lab_markdown_view_mode": "Markdown 檢視模式",
+        "ocr_lab_markdown_view_edit": "編輯模式",
+        "ocr_lab_markdown_view_preview": "預覽模式",
+        "ocr_lab_no_source": "請先上傳 PDF 或貼上一段文字。",
+        "ocr_lab_no_markdown": "請先產生或編輯好 Markdown 後再進行此步驟。",
+        "ocr_lab_compare_section": "步驟四：兩組 Prompt / 模型比較 (A/B)",
+        "ocr_lab_prompt_a": "Prompt A（指令說明）",
+        "ocr_lab_prompt_b": "Prompt B（指令說明）",
+        "ocr_lab_model_a": "模型 A",
+        "ocr_lab_model_b": "模型 B",
+        "ocr_lab_max_tokens_a": "最大輸出 tokens A",
+        "ocr_lab_max_tokens_b": "最大輸出 tokens B",
+        "ocr_lab_temperature_a": "溫度 A",
+        "ocr_lab_temperature_b": "溫度 B",
+        "ocr_lab_run_a": "執行 A",
+        "ocr_lab_run_b": "執行 B",
+        "ocr_lab_run_both": "同時執行 A 與 B",
+        "ocr_lab_result_a_title": "結果 A",
+        "ocr_lab_result_b_title": "結果 B",
+        "ocr_lab_result_view_mode": "結果檢視模式",
+        "ocr_lab_ai_magic_section": "步驟五：AI Magic – 在結果上做進階魔法處理",
+        "ocr_lab_ai_magic_type": "選擇 AI Magic 類型",
+        "ocr_lab_ai_magic_1": "Magic 1 – 風險與行動地圖",
+        "ocr_lab_ai_magic_2": "Magic 2 – 知識卡片（Q&A）",
+        "ocr_lab_ai_magic_model": "AI Magic 使用模型",
+        "ocr_lab_ai_magic_max_tokens": "AI Magic 最大輸出 tokens",
+        "ocr_lab_ai_magic_temperature": "AI Magic 溫度 (temperature)",
+        "ocr_lab_ai_magic_run": "執行 AI Magic",
+        "ocr_lab_ai_magic_result_title": "AI Magic 輸出結果",
+        "ocr_lab_dashboard_section": "迷你儀表板 – A/B 結果比較",
+        "ocr_lab_dashboard_description": "比較結果 A 與結果 B 的延遲與 token 使用情況。",
+        "ocr_lab_no_runs_yet": "尚未有 A/B 執行紀錄，請先執行至少一側。",
     },
 }
 
@@ -1204,6 +1334,31 @@ def init_session_state():
 - 回答時請使用繁體中文。
 - 請使用 Markdown 排版，若有多點說明請改用條列。
 """
+    # OCR Studio (new tab) state
+    if "ocr_lab_pdf_bytes" not in st.session_state:
+        st.session_state.ocr_lab_pdf_bytes = None
+    if "ocr_lab_page_count" not in st.session_state:
+        st.session_state.ocr_lab_page_count = 0
+    if "ocr_lab_raw_text" not in st.session_state:
+        st.session_state.ocr_lab_raw_text = ""
+    if "ocr_lab_markdown" not in st.session_state:
+        st.session_state.ocr_lab_markdown = ""
+    if "ocr_lab_result_a" not in st.session_state:
+        st.session_state.ocr_lab_result_a = ""
+    if "ocr_lab_result_b" not in st.session_state:
+        st.session_state.ocr_lab_result_b = ""
+    if "ocr_lab_result_a_meta" not in st.session_state:
+        st.session_state.ocr_lab_result_a_meta = {}
+    if "ocr_lab_result_b_meta" not in st.session_state:
+        st.session_state.ocr_lab_result_b_meta = {}
+    if "ocr_lab_status_a" not in st.session_state:
+        st.session_state.ocr_lab_status_a = "idle"
+    if "ocr_lab_status_b" not in st.session_state:
+        st.session_state.ocr_lab_status_b = "idle"
+    if "ocr_lab_magic_result" not in st.session_state:
+        st.session_state.ocr_lab_magic_result = ""
+    if "ocr_lab_magic_status" not in st.session_state:
+        st.session_state.ocr_lab_magic_status = "idle"
 
 
 def log_event(level: str, message: str):
@@ -1349,6 +1504,7 @@ def main():
             labels["pipeline_tab"],
             labels["smart_tab"],
             labels["pdf_tab"],
+            labels["ocr_lab_tab"],
             labels["dashboard_tab"],
         ]
     )
@@ -1446,7 +1602,7 @@ def main():
 
                 state = pipeline.history.get(agent.id, AgentRunState())
 
-                col_run1, col_run2, col_status = st.columns([1, 1, 2])
+                col_run1, col_status, col_meta = st.columns([1, 1, 2])
                 with col_run1:
                     if st.button(labels["run_agent"], key=f"run_{agent.id}"):
                         log_event(
@@ -1457,10 +1613,10 @@ def main():
                         pipeline.history[agent.id] = new_state
                         state = new_state
 
-                with col_run2:
+                with col_status:
                     render_status_badge(state.status)
 
-                with col_status:
+                with col_meta:
                     if state.latency_ms is not None:
                         st.caption(f"Latency: {state.latency_ms:.0f} ms")
 
@@ -1852,7 +2008,6 @@ def main():
                         height=260,
                         key="ocr_text_editor",
                     )
-                    # Whatever is in this editor becomes the effective text
                     st.session_state.merged_pdf_text = edited_text
                     if st.session_state.use_ocr_text:
                         st.session_state.merged_pdf_text_ocr = edited_text
@@ -2093,8 +2248,687 @@ def main():
                         key="pdf_qa_download",
                     )
 
-    # ----------------- DASHBOARD TAB -----------------
+    # ----------------- OCR STUDIO & COMPARE TAB ------
+
     with tabs[3]:
+        st.markdown(f"### {labels['ocr_lab_title']}")
+
+        source_mode = st.radio(
+            labels["ocr_lab_source_mode"],
+            options=[labels["ocr_lab_source_pdf"], labels["ocr_lab_source_text"]],
+            key="ocr_lab_source_mode",
+        )
+
+        # Step 1 – Get raw text (PDF OCR or pasted)
+        if source_mode == labels["ocr_lab_source_pdf"]:
+            if not pdf_lib_available():
+                st.error(labels["pdf_no_lib"])
+            else:
+                pdf_file = st.file_uploader(
+                    labels["ocr_lab_upload_pdf"], type=["pdf"], key="ocr_lab_pdf_uploader"
+                )
+                if pdf_file:
+                    pdf_bytes = pdf_file.getvalue()
+                    st.session_state.ocr_lab_pdf_bytes = pdf_bytes
+                    try:
+                        page_count = get_pdf_page_count(pdf_bytes)
+                    except Exception:
+                        page_count = 0
+                    st.session_state.ocr_lab_page_count = page_count
+
+                    col_prev, col_ocr = st.columns([1.3, 2])
+                    with col_prev:
+                        st.caption(labels["ocr_lab_pdf_preview"])
+                        if pdf_bytes:
+                            render_pdf_viewer(
+                                pdf_bytes, height=500, key="ocr_lab_pdf_viewer"
+                            )
+
+                    with col_ocr:
+                        if page_count == 0:
+                            st.warning("Unable to detect pages in this PDF.")
+                        else:
+                            pages = list(range(1, page_count + 1))
+                            pages_selected = st.multiselect(
+                                labels["ocr_lab_pages"],
+                                options=pages,
+                                default=pages,
+                                format_func=lambda x: f"Page {x}",
+                                key="ocr_lab_pages_selected",
+                            )
+
+                            ocr_backend = st.radio(
+                                labels["ocr_backend"],
+                                options=[
+                                    labels["ocr_backend_tesseract"],
+                                    labels["ocr_backend_llm"],
+                                ],
+                                key="ocr_lab_backend_choice",
+                            )
+
+                            lang_choice = st.selectbox(
+                                labels["ocr_lang"],
+                                options=[
+                                    labels["ocr_lang_en"],
+                                    labels["ocr_lang_zh"],
+                                    labels["ocr_lang_both"],
+                                ],
+                                key="ocr_lab_lang_choice",
+                            )
+
+                            if not pages_selected:
+                                st.warning("請至少勾選一個頁碼再執行 OCR。")
+                            else:
+                                if ocr_backend == labels["ocr_backend_tesseract"]:
+                                    if pytesseract is None or Image is None or fitz is None:
+                                        st.error(
+                                            "Tesseract OCR 需要安裝 PyMuPDF、pytesseract 與 Pillow，以及系統層的 Tesseract 執行檔與語言包。"
+                                        )
+                                    else:
+                                        if lang_choice == labels["ocr_lang_en"]:
+                                            lang_code = "eng"
+                                        elif lang_choice == labels["ocr_lang_zh"]:
+                                            lang_code = "chi_tra"
+                                        else:
+                                            lang_code = "eng+chi_tra"
+
+                                        if st.button(labels["ocr_run"], key="ocr_lab_run_tesseract"):
+                                            try:
+                                                with st.spinner(
+                                                    "Running Tesseract OCR on selected pages..."
+                                                ):
+                                                    ocr_text = build_text_with_tesseract_ocr(
+                                                        pdf_bytes,
+                                                        pages_selected,
+                                                        lang_code,
+                                                    )
+                                                st.session_state.ocr_lab_raw_text = ocr_text
+                                                st.session_state.ocr_lab_markdown = ocr_text
+                                                log_event(
+                                                    "success",
+                                                    f"OCR Studio – Tesseract OCR completed on pages {pages_selected}.",
+                                                )
+                                            except Exception as e:
+                                                st.error(f"OCR failed: {e}")
+                                                log_event(
+                                                    "error",
+                                                    f"OCR Studio – Tesseract OCR failed: {e}",
+                                                )
+                                else:
+                                    # LLM OCR with fixed models: gpt-4o-mini or gemini-2.5-flash
+                                    ocr_llm_model = st.selectbox(
+                                        labels["ocr_llm_model"],
+                                        options=["gpt-4o-mini", "gemini-2.5-flash"],
+                                        key="ocr_lab_llm_model_choice",
+                                    )
+                                    lang_mode = lang_choice.replace("英文", "English").replace(
+                                        "繁體中文", "Traditional Chinese"
+                                    )
+
+                                    if st.button(labels["ocr_run"], key="ocr_lab_run_llm"):
+                                        try:
+                                            with st.spinner(
+                                                "Running LLM-based OCR on selected pages..."
+                                            ):
+                                                ocr_text = build_text_with_llm_ocr(
+                                                    pdf_bytes,
+                                                    pages_selected,
+                                                    ocr_llm_model,
+                                                    api_keys,
+                                                    lang_mode,
+                                                )
+                                            st.session_state.ocr_lab_raw_text = ocr_text
+                                            st.session_state.ocr_lab_markdown = ocr_text
+                                            log_event(
+                                                "success",
+                                                f"OCR Studio – LLM OCR completed on pages {pages_selected}.",
+                                            )
+                                        except Exception as e:
+                                            st.error(f"LLM OCR failed: {e}")
+                                            log_event(
+                                                "error",
+                                                f"OCR Studio – LLM OCR failed: {e}",
+                                            )
+        else:
+            pasted = st.text_area(
+                labels["ocr_lab_paste_text"],
+                value=st.session_state.ocr_lab_raw_text,
+                height=220,
+                key="ocr_lab_pasted_text",
+            )
+            st.session_state.ocr_lab_raw_text = pasted
+            if not st.session_state.ocr_lab_markdown:
+                st.session_state.ocr_lab_markdown = pasted
+
+        st.markdown("---")
+
+        # Step 2 – Auto format to Markdown
+        st.markdown(f"#### {labels['ocr_lab_format_section']}")
+        if not st.session_state.ocr_lab_raw_text.strip():
+            st.info(labels["ocr_lab_no_source"])
+        else:
+            col_fmt1, col_fmt2 = st.columns([2, 1])
+            with col_fmt1:
+                st.code(
+                    (st.session_state.ocr_lab_raw_text or "")[:1200],
+                    language="text",
+                )
+            with col_fmt2:
+                fmt_model_name = st.selectbox(
+                    labels["ocr_lab_format_model"],
+                    options=["gpt-4o-mini", "gemini-2.5-flash"],
+                    key="ocr_lab_format_model_name",
+                )
+                fmt_max_tokens = st.number_input(
+                    labels["ocr_lab_format_max_tokens"],
+                    min_value=512,
+                    max_value=16000,
+                    value=4096,
+                    step=512,
+                    key="ocr_lab_format_max_tokens",
+                )
+                fmt_temp = st.slider(
+                    labels["ocr_lab_format_temperature"],
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=0.1,
+                    step=0.05,
+                    key="ocr_lab_format_temperature",
+                )
+
+                if st.button(labels["ocr_lab_format_run"], key="ocr_lab_format_run_btn"):
+                    provider = provider_for_pdf_model(fmt_model_name)
+                    dummy_agent = AgentConfig(
+                        id="ocr-lab-format",
+                        name="OCR Lab Format",
+                        provider=provider,
+                        model=fmt_model_name,
+                        max_tokens=int(fmt_max_tokens),
+                        temperature=float(fmt_temp),
+                        user_prompt="Format OCR or pasted text into clean Markdown.",
+                    )
+                    try:
+                        log_event(
+                            "info",
+                            f"OCR Studio – Formatting to Markdown (provider={provider}, model={fmt_model_name})",
+                        )
+                        res = call_llm(
+                            dummy_agent,
+                            OCR_FORMAT_SYSTEM_PROMPT_ZH,
+                            st.session_state.ocr_lab_raw_text,
+                            api_keys,
+                        )
+                        st.session_state.ocr_lab_markdown = res.get("text") or ""
+                        log_event("success", "OCR Studio – Markdown formatting completed.")
+                    except Exception as e:
+                        st.error(f"Markdown formatting failed: {e}")
+                        log_event(
+                            "error",
+                            f"OCR Studio – Markdown formatting failed: {e}",
+                        )
+
+        st.markdown("---")
+
+        # Step 3 – Markdown editor
+        st.markdown(f"#### {labels['ocr_lab_markdown_editor_title']}")
+        if not st.session_state.ocr_lab_markdown.strip():
+            st.info(labels["ocr_lab_no_markdown"])
+        else:
+            md_view_mode = st.radio(
+                labels["ocr_lab_markdown_view_mode"],
+                options=[
+                    labels["ocr_lab_markdown_view_edit"],
+                    labels["ocr_lab_markdown_view_preview"],
+                ],
+                key="ocr_lab_markdown_view_mode",
+            )
+            if md_view_mode == labels["ocr_lab_markdown_view_edit"]:
+                edited_md = st.text_area(
+                    "",
+                    value=st.session_state.ocr_lab_markdown,
+                    height=260,
+                    key="ocr_lab_markdown_editor",
+                )
+                st.session_state.ocr_lab_markdown = edited_md
+            else:
+                st.markdown(st.session_state.ocr_lab_markdown, unsafe_allow_html=True)
+
+            st.download_button(
+                labels["export_md"],
+                data=st.session_state.ocr_lab_markdown or "",
+                file_name="ocr_lab_markdown.md",
+                mime="text/markdown",
+                key="ocr_lab_markdown_download",
+            )
+
+        st.markdown("---")
+
+        # Step 4 – Prompt & Model A/B comparison
+        st.markdown(f"#### {labels['ocr_lab_compare_section']}")
+        if not st.session_state.ocr_lab_markdown.strip():
+            st.info(labels["ocr_lab_no_markdown"])
+        else:
+            colA, colB = st.columns(2)
+
+            # Defaults for prompts
+            default_prompt_a = """請根據以下 Markdown 文件，產出一份條列清晰的重點摘要：
+- 全程使用繁體中文。
+- 先給整體摘要，再列出 10–15 個關鍵重點。"""
+            default_prompt_b = """請根據以下 Markdown 文件，聚焦找出風險、問題與改善建議：
+- 全程使用繁體中文。
+- 請用條列與表格呈現。"""
+
+            with colA:
+                prompt_a = st.text_area(
+                    labels["ocr_lab_prompt_a"],
+                    value=default_prompt_a,
+                    height=150,
+                    key="ocr_lab_prompt_a",
+                )
+                model_a = st.selectbox(
+                    labels["ocr_lab_model_a"],
+                    options=["gpt-4o-mini", "gemini-2.5-flash"],
+                    key="ocr_lab_model_a",
+                )
+                max_tokens_a = st.number_input(
+                    labels["ocr_lab_max_tokens_a"],
+                    min_value=512,
+                    max_value=24000,
+                    value=4096,
+                    step=512,
+                    key="ocr_lab_max_tokens_a",
+                )
+                temp_a = st.slider(
+                    labels["ocr_lab_temperature_a"],
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=0.2,
+                    step=0.05,
+                    key="ocr_lab_temperature_a",
+                )
+
+                col_run_a1, col_run_a2 = st.columns([1, 1])
+                with col_run_a1:
+                    if st.button(labels["ocr_lab_run_a"], key="ocr_lab_run_a_btn"):
+                        provider_a = provider_for_pdf_model(model_a)
+                        dummy_agent_a = AgentConfig(
+                            id="ocr-lab-A",
+                            name="OCR Lab A",
+                            provider=provider_a,
+                            model=model_a,
+                            max_tokens=int(max_tokens_a),
+                            temperature=float(temp_a),
+                            user_prompt=prompt_a,
+                        )
+                        st.session_state.ocr_lab_status_a = "running"
+                        try:
+                            user_content_a = f"""[Document Markdown]
+{st.session_state.ocr_lab_markdown}
+
+====================
+
+[Task Instructions A]
+{prompt_a}
+"""
+                            log_event(
+                                "info",
+                                f"OCR Studio – Running A (provider={provider_a}, model={model_a})",
+                            )
+                            res_a = call_llm(
+                                dummy_agent_a,
+                                "You are a helpful document analysis assistant. Answer in Traditional Chinese and use Markdown.",
+                                user_content_a,
+                                api_keys,
+                            )
+                            st.session_state.ocr_lab_result_a = res_a.get("text") or ""
+                            st.session_state.ocr_lab_result_a_meta = {
+                                "latency_ms": res_a.get("latency_ms"),
+                                "input_tokens": res_a.get("input_tokens"),
+                                "output_tokens": res_a.get("output_tokens"),
+                                "model": model_a,
+                            }
+                            st.session_state.ocr_lab_status_a = "completed"
+                            log_event("success", "OCR Studio – Run A completed.")
+                        except Exception as e:
+                            st.session_state.ocr_lab_status_a = "error"
+                            st.session_state.ocr_lab_result_a = f"Error: {e}"
+                            log_event("error", f"OCR Studio – Run A failed: {e}")
+                with col_run_a2:
+                    render_status_badge(st.session_state.ocr_lab_status_a)
+
+            with colB:
+                prompt_b = st.text_area(
+                    labels["ocr_lab_prompt_b"],
+                    value=default_prompt_b,
+                    height=150,
+                    key="ocr_lab_prompt_b",
+                )
+                model_b = st.selectbox(
+                    labels["ocr_lab_model_b"],
+                    options=["gpt-4o-mini", "gemini-2.5-flash"],
+                    key="ocr_lab_model_b",
+                )
+                max_tokens_b = st.number_input(
+                    labels["ocr_lab_max_tokens_b"],
+                    min_value=512,
+                    max_value=24000,
+                    value=4096,
+                    step=512,
+                    key="ocr_lab_max_tokens_b",
+                )
+                temp_b = st.slider(
+                    labels["ocr_lab_temperature_b"],
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=0.2,
+                    step=0.05,
+                    key="ocr_lab_temperature_b",
+                )
+
+                col_run_b1, col_run_b2 = st.columns([1, 1])
+                with col_run_b1:
+                    if st.button(labels["ocr_lab_run_b"], key="ocr_lab_run_b_btn"):
+                        provider_b = provider_for_pdf_model(model_b)
+                        dummy_agent_b = AgentConfig(
+                            id="ocr-lab-B",
+                            name="OCR Lab B",
+                            provider=provider_b,
+                            model=model_b,
+                            max_tokens=int(max_tokens_b),
+                            temperature=float(temp_b),
+                            user_prompt=prompt_b,
+                        )
+                        st.session_state.ocr_lab_status_b = "running"
+                        try:
+                            user_content_b = f"""[Document Markdown]
+{st.session_state.ocr_lab_markdown}
+
+====================
+
+[Task Instructions B]
+{prompt_b}
+"""
+                            log_event(
+                                "info",
+                                f"OCR Studio – Running B (provider={provider_b}, model={model_b})",
+                            )
+                            res_b = call_llm(
+                                dummy_agent_b,
+                                "You are a helpful document analysis assistant. Answer in Traditional Chinese and use Markdown.",
+                                user_content_b,
+                                api_keys,
+                            )
+                            st.session_state.ocr_lab_result_b = res_b.get("text") or ""
+                            st.session_state.ocr_lab_result_b_meta = {
+                                "latency_ms": res_b.get("latency_ms"),
+                                "input_tokens": res_b.get("input_tokens"),
+                                "output_tokens": res_b.get("output_tokens"),
+                                "model": model_b,
+                            }
+                            st.session_state.ocr_lab_status_b = "completed"
+                            log_event("success", "OCR Studio – Run B completed.")
+                        except Exception as e:
+                            st.session_state.ocr_lab_status_b = "error"
+                            st.session_state.ocr_lab_result_b = f"Error: {e}"
+                            log_event("error", f"OCR Studio – Run B failed: {e}")
+                with col_run_b2:
+                    render_status_badge(st.session_state.ocr_lab_status_b)
+
+            # Optional: run both at once
+            if st.button(labels["ocr_lab_run_both"], key="ocr_lab_run_both_btn"):
+                st.session_state.ocr_lab_status_a = "running"
+                st.session_state.ocr_lab_status_b = "running"
+                st.experimental_rerun()
+
+        # Show A/B results
+        st.markdown("---")
+        if st.session_state.ocr_lab_result_a or st.session_state.ocr_lab_result_b:
+            res_view_mode = st.radio(
+                labels["ocr_lab_result_view_mode"],
+                options=[labels["pdf_view_rendered"], labels["pdf_view_raw"]],
+                key="ocr_lab_result_view_mode",
+            )
+            colRA, colRB = st.columns(2)
+            with colRA:
+                st.markdown(f"##### {labels['ocr_lab_result_a_title']}")
+                if st.session_state.ocr_lab_result_a:
+                    if res_view_mode == labels["pdf_view_rendered"]:
+                        st.markdown(
+                            st.session_state.ocr_lab_result_a, unsafe_allow_html=True
+                        )
+                    else:
+                        st.code(
+                            st.session_state.ocr_lab_result_a, language="markdown"
+                        )
+                    meta_a = st.session_state.ocr_lab_result_a_meta or {}
+                    if meta_a:
+                        st.caption(
+                            f"Model: {meta_a.get('model')} | Latency: {meta_a.get('latency_ms', 0):.0f} ms | "
+                            f"Input tokens: {meta_a.get('input_tokens', '–')} | Output tokens: {meta_a.get('output_tokens', '–')}"
+                        )
+                    st.download_button(
+                        labels["export_md"],
+                        data=st.session_state.ocr_lab_result_a or "",
+                        file_name="ocr_lab_result_A.md",
+                        mime="text/markdown",
+                        key="ocr_lab_result_a_download",
+                    )
+                else:
+                    st.info("Result A has not been run yet.")
+
+            with colRB:
+                st.markdown(f"##### {labels['ocr_lab_result_b_title']}")
+                if st.session_state.ocr_lab_result_b:
+                    if res_view_mode == labels["pdf_view_rendered"]:
+                        st.markdown(
+                            st.session_state.ocr_lab_result_b, unsafe_allow_html=True
+                        )
+                    else:
+                        st.code(
+                            st.session_state.ocr_lab_result_b, language="markdown"
+                        )
+                    meta_b = st.session_state.ocr_lab_result_b_meta or {}
+                    if meta_b:
+                        st.caption(
+                            f"Model: {meta_b.get('model')} | Latency: {meta_b.get('latency_ms', 0):.0f} ms | "
+                            f"Input tokens: {meta_b.get('input_tokens', '–')} | Output tokens: {meta_b.get('output_tokens', '–')}"
+                        )
+                    st.download_button(
+                        labels["export_md"],
+                        data=st.session_state.ocr_lab_result_b or "",
+                        file_name="ocr_lab_result_B.md",
+                        mime="text/markdown",
+                        key="ocr_lab_result_b_download",
+                    )
+                else:
+                    st.info("Result B has not been run yet.")
+
+        # Step 5 – AI Magic
+        st.markdown("---")
+        st.markdown(f"#### {labels['ocr_lab_ai_magic_section']}")
+        base_candidates = []
+        if st.session_state.ocr_lab_result_a:
+            base_candidates.append(("A", st.session_state.ocr_lab_result_a))
+        if st.session_state.ocr_lab_result_b:
+            base_candidates.append(("B", st.session_state.ocr_lab_result_b))
+        if not base_candidates:
+            st.info(labels["ocr_lab_no_runs_yet"])
+        else:
+            choice_labels = []
+            if st.session_state.ocr_lab_result_a:
+                choice_labels.append("Use Result A")
+            if st.session_state.ocr_lab_result_b:
+                choice_labels.append("Use Result B")
+            if st.session_state.ocr_lab_result_a and st.session_state.ocr_lab_result_b:
+                choice_labels.append("Use A + B (combined)")
+
+            base_choice = st.radio(
+                labels["ocr_lab_ai_magic_type"],
+                options=[
+                    labels["ocr_lab_ai_magic_1"],
+                    labels["ocr_lab_ai_magic_2"],
+                ],
+                key="ocr_lab_magic_type",
+            )
+
+            base_source_choice = st.selectbox(
+                "Source for AI Magic",
+                options=choice_labels,
+                key="ocr_lab_magic_source",
+            )
+
+            if base_source_choice.startswith("Use Result A"):
+                magic_source_text = st.session_state.ocr_lab_result_a
+            elif base_source_choice.startswith("Use Result B"):
+                magic_source_text = st.session_state.ocr_lab_result_b
+            else:
+                magic_source_text = (
+                    st.session_state.ocr_lab_result_a
+                    + "\n\n====================\n\n"
+                    + st.session_state.ocr_lab_result_b
+                )
+
+            magic_model = st.selectbox(
+                labels["ocr_lab_ai_magic_model"],
+                options=["gpt-4o-mini", "gemini-2.5-flash"],
+                key="ocr_lab_magic_model",
+            )
+            magic_max_tokens = st.number_input(
+                labels["ocr_lab_ai_magic_max_tokens"],
+                min_value=512,
+                max_value=24000,
+                value=6000,
+                step=512,
+                key="ocr_lab_magic_max_tokens",
+            )
+            magic_temp = st.slider(
+                labels["ocr_lab_ai_magic_temperature"],
+                min_value=0.0,
+                max_value=1.0,
+                value=0.2,
+                step=0.05,
+                key="ocr_lab_magic_temperature",
+            )
+
+            if st.button(labels["ocr_lab_ai_magic_run"], key="ocr_lab_magic_run_btn"):
+                provider_magic = provider_for_pdf_model(magic_model)
+                dummy_magic = AgentConfig(
+                    id="ocr-lab-magic",
+                    name="OCR Lab Magic",
+                    provider=provider_magic,
+                    model=magic_model,
+                    max_tokens=int(magic_max_tokens),
+                    temperature=float(magic_temp),
+                    user_prompt="AI Magic transformation.",
+                )
+
+                st.session_state.ocr_lab_magic_status = "running"
+                try:
+                    if base_choice == labels["ocr_lab_ai_magic_1"]:
+                        system_prompt_magic = AI_MAGIC_RISK_SYSTEM_PROMPT_ZH
+                    else:
+                        system_prompt_magic = AI_MAGIC_CARDS_SYSTEM_PROMPT_ZH
+
+                    user_content_magic = f"""[Source analysis result]
+{magic_source_text}
+
+====================
+
+請根據上述內容進行 AI Magic 轉換。
+"""
+                    log_event(
+                        "info",
+                        f"OCR Studio – AI Magic ({base_choice}) running (provider={provider_magic}, model={magic_model})",
+                    )
+                    res_magic = call_llm(
+                        dummy_magic,
+                        system_prompt_magic,
+                        user_content_magic,
+                        api_keys,
+                    )
+                    st.session_state.ocr_lab_magic_result = res_magic.get("text") or ""
+                    st.session_state.ocr_lab_magic_status = "completed"
+                    log_event("success", "OCR Studio – AI Magic completed.")
+                except Exception as e:
+                    st.session_state.ocr_lab_magic_status = "error"
+                    st.session_state.ocr_lab_magic_result = f"Error: {e}"
+                    log_event("error", f"OCR Studio – AI Magic failed: {e}")
+
+        if st.session_state.ocr_lab_magic_result:
+            st.markdown(f"##### {labels['ocr_lab_ai_magic_result_title']}")
+            render_status_badge(st.session_state.ocr_lab_magic_status)
+            if st.session_state.ocr_lab_magic_status == "completed":
+                st.markdown(
+                    st.session_state.ocr_lab_magic_result, unsafe_allow_html=True
+                )
+            else:
+                st.code(st.session_state.ocr_lab_magic_result, language="markdown")
+            st.download_button(
+                labels["export_md"],
+                data=st.session_state.ocr_lab_magic_result or "",
+                file_name="ocr_lab_magic.md",
+                mime="text/markdown",
+                key="ocr_lab_magic_download",
+            )
+
+        # Mini dashboard for A/B
+        st.markdown("---")
+        st.markdown(f"#### {labels['ocr_lab_dashboard_section']}")
+        st.caption(labels["ocr_lab_dashboard_description"])
+
+        meta_a = st.session_state.ocr_lab_result_a_meta or {}
+        meta_b = st.session_state.ocr_lab_result_b_meta or {}
+
+        if not meta_a and not meta_b:
+            st.info(labels["ocr_lab_no_runs_yet"])
+        else:
+            rows = []
+            if meta_a:
+                rows.append(
+                    {
+                        "Run": "A",
+                        "Model": meta_a.get("model"),
+                        "Latency (ms)": meta_a.get("latency_ms") or 0,
+                        "Output tokens": meta_a.get("output_tokens") or 0,
+                    }
+                )
+            if meta_b:
+                rows.append(
+                    {
+                        "Run": "B",
+                        "Model": meta_b.get("model"),
+                        "Latency (ms)": meta_b.get("latency_ms") or 0,
+                        "Output tokens": meta_b.get("output_tokens") or 0,
+                    }
+                )
+            if rows:
+                import pandas as pd
+
+                df = pd.DataFrame(rows)
+                c1, c2 = st.columns(2)
+                with c1:
+                    fig_lat = px.bar(
+                        df,
+                        x="Run",
+                        y="Latency (ms)",
+                        color="Run",
+                        hover_data=["Model"],
+                        title="Latency comparison",
+                    )
+                    st.plotly_chart(fig_lat, use_container_width=True)
+                with c2:
+                    fig_tok = px.bar(
+                        df,
+                        x="Run",
+                        y="Output tokens",
+                        color="Run",
+                        hover_data=["Model"],
+                        title="Output token comparison",
+                    )
+                    st.plotly_chart(fig_tok, use_container_width=True)
+
+    # ----------------- DASHBOARD TAB -----------------
+    with tabs[4]:
         pipeline: PipelineState = st.session_state.pipeline
         runs = list(pipeline.history.values())
         total_latency = sum(r.latency_ms or 0 for r in runs)
